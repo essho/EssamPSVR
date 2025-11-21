@@ -3,31 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>جولة 360 (النسخة الصارمة)</title>
+    <title>جولة 360 (Native VR)</title>
     
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <script>
-        // 1. مكون توجيه العناصر للكاميرا
+        // 1. مكون التوجيه (أساسي)
         AFRAME.registerComponent('look-at', {
             schema: { type: 'selector' },
             tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
         });
 
-        // 2. مكون التفاعل باليد (القرص = نقر)
-        AFRAME.registerComponent('pinch-to-click', {
-            init: function () {
-                this.el.addEventListener('pinchstarted', (evt) => {
-                    // نحاكي نقرة الماوس عند القيام بالقرص
-                    const raycaster = this.el.components.raycaster;
-                    if (raycaster && raycaster.intersectedEls.length > 0) {
-                        raycaster.intersectedEls[0].emit('click');
-                    }
-                });
-            }
-        });
-
-        // 3. مكون الزوم (تم تثبيته ليعمل بكفاءة)
+        // 2. مكون الزوم (للموبايل/الكمبيوتر فقط)
         AFRAME.registerComponent('zoom-controls', {
             schema: { min: {default: 30}, max: {default: 80} },
             init: function () {
@@ -48,16 +35,15 @@
              raycaster="objects: .clickable">
         
         <a-assets>
-            <img id="current-img" src="./panoramas/scene-1.jpg" onerror="alert('تأكد من وجود مجلد panoramas وصورة scene-1.jpg')">
+            <img id="current-img" src="./panoramas/scene-1.jpg">
         </a-assets>
 
         <a-sky id="sky" src="#current-img" rotation="0 -90 0" class="clickable" onclick="hideInfoPanel()"></a-sky>
 
         <a-entity id="hotspots">
             <a-sphere position="0 1.6 -3" radius="0.2" color="red" class="clickable"
-                      onclick="alert('النظام يعمل! تأكد من ملفات JSON')"
+                      onclick="alert('النظام يعمل')"
                       animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; loop: true; dur: 500">
-                <a-text value="TEST POINT" align="center" position="0 0.4 0" look-at="#camera"></a-text>
             </a-sphere>
         </a-entity>
 
@@ -69,25 +55,26 @@
         <a-entity id="rig" position="0 1.6 0">
             
             <a-camera id="camera" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true" zoom-controls>
-                <a-entity cursor="fuse: false" position="0 0 -1"
-                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                          material="color: white; shader: flat"
-                          visible="false">
-                </a-entity>
+                <a-entity cursor="fuse: false" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" visible="false"></a-entity>
             </a-camera>
 
-            <a-entity hand-tracking-controls="hand: left" pinch-to-click>
-                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: red; lineOpacity: 0.8" 
-                          position="0 0 0" rotation="0 0 0"></a-entity>
+            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: red"></a-entity>
+            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10; lineColor: red"></a-entity>
+
+            <a-entity hand-tracking-controls="hand: left">
+                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: #ff0000; interval: 100"
+                          position="0 0 0" 
+                          rotation="0 0 0"
+                          cursor="fuse: false"> </a-entity>
             </a-entity>
 
-            <a-entity hand-tracking-controls="hand: right" pinch-to-click>
-                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: red; lineOpacity: 0.8" 
-                          position="0 0 0" rotation="0 0 0"></a-entity>
+            <a-entity hand-tracking-controls="hand: right">
+                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: #ff0000; interval: 100"
+                          position="0 0 0" 
+                          rotation="0 0 0"
+                          cursor="fuse: false">
+                </a-entity>
             </a-entity>
-
-            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: cyan;"></a-entity>
-            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10; lineColor: cyan;"></a-entity>
 
         </a-entity>
 
@@ -98,131 +85,112 @@
         const container = document.getElementById('hotspots');
         const infoPanel = document.getElementById('info-panel');
         const infoText = document.getElementById('info-text');
-        let hideTimer; // متغير لتخزين عداد الوقت
+        let hideTimer;
 
-        // تحميل البداية
+        // التحميل الأولي
         const startImg = document.getElementById('current-img').getAttribute('src');
         loadExternalData(startImg);
 
-        // --- دالة تحميل البيانات JSON ---
+        // تحميل البيانات
         function loadExternalData(imagePath) {
             const filename = imagePath.split('/').pop().split('.')[0];
             const jsonPath = `./hotspots/${filename}.json`;
 
-            console.log("Fetching:", jsonPath);
-
             fetch(jsonPath)
-                .then(res => { 
-                    if (!res.ok) throw new Error("JSON Missing"); 
-                    return res.json(); 
-                })
+                .then(res => { if (!res.ok) throw new Error("No JSON"); return res.json(); })
                 .then(data => {
-                    // إذا وجدنا الملف، نمسح نقطة الاختبار الحمراء ونرسم النقاط الحقيقية
                     container.innerHTML = ''; 
                     data.forEach(spot => createHotspot(spot));
                 })
-                .catch(err => {
-                    console.log("No JSON found, keeping default scene.");
-                });
+                .catch(err => console.log("Default scene active"));
         }
 
-        // --- دالة رسم النقاط ---
+        // إنشاء النقاط
         function createHotspot(data) {
             const el = document.createElement('a-entity');
             el.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
             el.setAttribute('look-at', '[camera]');
 
             let shape;
-            
             if (data.type === 'link') {
-                // سهم الانتقال
                 shape = document.createElement('a-sphere');
                 shape.setAttribute('radius', '0.3');
-                shape.setAttribute('color', '#2ecc71'); // أخضر
+                shape.setAttribute('color', '#2ecc71');
                 shape.setAttribute('opacity', '0.9');
-                // حلقة جمالية
+                
                 const ring = document.createElement('a-ring');
                 ring.setAttribute('color', 'white');
                 ring.setAttribute('radius-inner', '0.35');
                 ring.setAttribute('radius-outer', '0.4');
                 el.appendChild(ring);
             } else {
-                // نقطة معلومات
                 shape = document.createElement('a-box');
                 shape.setAttribute('scale', '0.4 0.4 0.4');
-                shape.setAttribute('color', '#3498db'); // أزرق
+                shape.setAttribute('color', '#3498db'); 
                 shape.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 5000');
             }
 
-            // أهم سطر: الكلاس ليتمكن الليزر والماوس من رؤيته
+            // الكلاس الضروري للتفاعل
             shape.setAttribute('class', 'clickable');
-            
-            // نبض بسيط
             shape.setAttribute('animation__pulse', 'property: scale; dir: alternate; dur: 1000; loop: true; to: 1.1 1.1 1.1');
 
             el.appendChild(shape);
 
-            // --- التفاعل عند النقر ---
+            // التفاعل الموحد (يعمل مع كل الأجهزة)
             shape.addEventListener('click', (evt) => {
-                // منع الحدث من الوصول للخلفية (حتى لا تغلق النافذة فور فتحها)
+                // إيقاف انتشار الحدث
                 if(evt) evt.stopPropagation();
-
-                if (data.type === 'link') {
-                    changeScene(data.target);
-                } else if (data.type === 'info') {
-                    showInfoPanel(data.text, el.getAttribute('position'));
-                }
+                // تشغيل الحدث
+                handleInteraction(data, el.getAttribute('position'));
             });
 
             container.appendChild(el);
         }
 
-        // --- دالة تغيير المشهد ---
+        // معالج التفاعل الموحد
+        function handleInteraction(data, pos) {
+            if (data.type === 'link') {
+                changeScene(data.target);
+            } else if (data.type === 'info') {
+                showInfoPanel(data.text, pos);
+            }
+        }
+
         function changeScene(newUrl) {
-            hideInfoPanel(); // إغلاق أي نافذة مفتوحة
-            
-            // تأثير اسوداد بسيط
+            hideInfoPanel();
             sky.setAttribute('color', '#000');
             setTimeout(() => {
                 sky.setAttribute('src', newUrl);
                 sky.removeAttribute('color');
-                
-                // تحميل النقاط الجديدة
                 loadExternalData(newUrl);
             }, 300);
         }
 
-        // --- دالة إظهار المعلومات (مع الإغلاق التلقائي) ---
         function showInfoPanel(text, pos) {
-            // إيقاف أي مؤقت سابق
             if (hideTimer) clearTimeout(hideTimer);
 
             infoText.setAttribute('value', text);
-            
-            // وضع اللوحة أمام النقطة وفوقها قليلاً
-            // نحول النص إلى أرقام لضمان الجمع الصحيح
+            // تحويل الإحداثيات لأرقام لضمان الجمع
             const x = parseFloat(pos.x);
             const y = parseFloat(pos.y) + 0.6;
             const z = parseFloat(pos.z);
-            
+
             infoPanel.setAttribute('position', `${x} ${y} ${z}`);
             infoPanel.setAttribute('look-at', '[camera]');
             infoPanel.setAttribute('visible', true);
             infoPanel.setAttribute('scale', '1 1 1');
 
-            // إغلاق تلقائي بعد 3 ثواني
+            // الإغلاق التلقائي بعد 3 ثواني
             hideTimer = setTimeout(() => {
                 hideInfoPanel();
             }, 3000);
         }
 
-        // --- دالة إخفاء المعلومات ---
         function hideInfoPanel() {
             infoPanel.setAttribute('visible', false);
             infoPanel.setAttribute('scale', '0 0 0');
             if (hideTimer) clearTimeout(hideTimer);
         }
-
     </script>
 </body>
 </html>
