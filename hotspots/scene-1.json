@@ -1,13 +1,38 @@
-[
-  {
-    "type": "link",
-    "x": 5, "y": 1, "z": -4,
-    "target": "./panoramas/scene-2.jpg",
-    "text": "go-2"
+{
+  "audio": {
+    "src": "./sounds/intro.mp3",
+    "loop": false, 
+    "volume": 1.0
   },
-  {
-    "type": "info",
-    "x": -2, "y": 1.5, "z": 3,
-    "text": "Essam1"
-  }
-]
+  "hotspots": [
+    {
+      "type": "link",
+      "x": 5, "y": 1, "z": -4,
+      "target": "./panoramas/scene-2.jpg",
+      
+      "//_تعليق": "هنا نستخدم مجسم ثلاثي الأبعاد",
+      "geometry": "sphere",
+      "color": "red",
+      "scale": "0.5 0.5 0.5"
+    },
+    {
+      "type": "info",
+      "x": -2, "y": 1.5, "z": 3,
+      "text": "Essam",
+
+      "//_تعليق": "هنا لم نكتب geometry فسيقوم الكود بالبحث عن صورة",
+      "image": "./icons/info.png",
+      "scale": "1 1 1"
+    },
+    {
+      "type": "link",
+      "x": 0, "y": 1, "z": 4,
+      "target": "./panoramas/intro-video.mp4",
+
+      "//_تعليق": "لا مجسم ولا صورة؟ سيبحث عن الرمز النصي",
+      "char": "عصام️",
+      "color": "yellow",
+      "scale": "6 2 2"
+    }
+  ]
+}
