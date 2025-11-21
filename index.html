@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>جولة 360 الاحترافية</title>
+    <title>جولة 360 (نسخة مستقرة)</title>
     
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <script>
-        // 1. مكون لتوجيه العناصر نحو الكاميرا
+        // 1. مكون توجيه العناصر للكاميرا
         AFRAME.registerComponent('look-at', {
             schema: { type: 'selector' },
             tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
         });
 
-        // 2. مكون التكبير والتصغير (Zoom) للجوال والكمبيوتر
+        // 2. مكون الزوم (Zoom) للجوال والكمبيوتر
         AFRAME.registerComponent('zoom-controls', {
             schema: {
                 min: {default: 30},
@@ -24,13 +24,13 @@
             init: function () {
                 this.camera = this.el.components.camera.camera;
                 
-                // للماوس (Wheel)
+                // للماوس
                 window.addEventListener('wheel', (e) => {
                     const delta = e.deltaY > 0 ? 1 : -1;
                     this.zoom(delta);
                 });
 
-                // للمس (Pinch)
+                // للمس (Touch Pinch)
                 this.touchStartDistance = 0;
                 window.addEventListener('touchstart', (e) => {
                     if (e.touches.length === 2) {
@@ -48,7 +48,7 @@
                             e.touches[0].pageY - e.touches[1].pageY
                         );
                         const delta = this.touchStartDistance - currentDistance;
-                        this.zoom(delta * 0.05); // حساسية اللمس
+                        this.zoom(delta * 0.05);
                         this.touchStartDistance = currentDistance;
                     }
                 });
@@ -63,9 +63,7 @@
     </script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: black; }
-        /* إخفاء أيقونة VR الافتراضية وتنسيقها بشكل أجمل إذا لزم الأمر */
-        .a-enter-vr-button { bottom: 20px !important; right: 20px !important; }
+        body { margin: 0; overflow: hidden; background-color: #000; }
     </style>
 </head>
 <body>
@@ -74,7 +72,7 @@
         
         <a-assets>
             <img id="scene1-img" src="./panoramas/scene-1.jpg">
-            </a-assets>
+        </a-assets>
 
         <a-sky id="sky" src="#scene1-img" rotation="0 -90 0"></a-sky>
 
@@ -90,8 +88,8 @@
                 
                 <a-entity cursor="fuse: false" position="0 0 -1"
                           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
-                          material="color: white; shader: flat; opacity: 0.5">
-                </a-entity>
+                          material="color: white; shader: flat; opacity: 0.5"
+                          visible="false"> </a-entity>
             </a-camera>
 
             <a-entity id="left-hand" hand-tracking-controls="hand: left"></a-entity>
@@ -106,39 +104,39 @@
 
     <script>
         // ==========================================
-        // منطقة الإعدادات (هنا تضيف أسهم الانتقال)
+        // إعدادات المشاهد والنقاط
         // ==========================================
         
         const scenesConfig = {
             // المشهد الأول
             'start': {
-                image: './panoramas/scene-1.jpg', // مسار الصورة
+                image: './panoramas/scene-1.jpg', 
                 hotspots: [
-                    // مثال لسهم انتقال:
+                    // السهم الأول (بدون نص لتجنب الأخطاء)
                     { 
-                        x: 5, y: 1, z: -4,          // الإحداثيات (يمكنك معرفتها بالتجربة)
-                        target: './panoramas/scene-2.jpg', // الصورة التي سينتقل لها
-                        text: "انتقال للغرفة التالية" 
+                        x: 5, y: 1, z: -4,          
+                        target: './panoramas/scene-2.jpg'
                     },
-                    // يمكنك إضافة المزيد من النقاط هنا
+                    // مثال لسهم ثاني (عدل الاحداثيات حسب رغبتك)
+                    // { x: -2, y: 1, z: 5, target: './panoramas/kitchen.jpg' }
                 ]
             }
         };
 
         // ==========================================
-        // المنطق البرمجي
+        // تشغيل النظام
         // ==========================================
 
         const sky = document.getElementById('sky');
         const container = document.getElementById('hotspots');
 
-        // تحميل المشهد المبدئي
+        // بدء التحميل
         loadSceneData(scenesConfig['start']);
 
         function loadSceneData(sceneData) {
             if (!sceneData) return;
 
-            // 1. تغيير الصورة بتأثير تلاشي
+            // 1. تأثير الانتقال (Fade)
             const fadeEl = document.createElement('a-sphere');
             fadeEl.setAttribute('radius', 0.1);
             fadeEl.setAttribute('material', 'color: black; side: double; transparent: true; opacity: 0');
@@ -152,11 +150,11 @@
                 if (op >= 1) {
                     clearInterval(fadeOut);
                     
-                    // تغيير المصدر ومسح النقاط القديمة
-                    sky.setAttribute('src', sceneData.image || sceneData); // يقبل كائن أو رابط مباشر
-                    container.innerHTML = ''; 
+                    // تغيير الصورة
+                    sky.setAttribute('src', sceneData.image || sceneData);
+                    container.innerHTML = ''; // مسح الأسهم القديمة
 
-                    // رسم النقاط الجديدة إذا وجدت
+                    // إضافة الأسهم الجديدة
                     if (sceneData.hotspots) {
                         sceneData.hotspots.forEach(spot => createHotspot(spot));
                     }
@@ -168,7 +166,7 @@
                         fadeEl.setAttribute('opacity', op2);
                         if (op2 <= 0) {
                             clearInterval(fadeIn);
-                            fadeEl.parentNode.removeChild(fadeEl);
+                            if(fadeEl.parentNode) fadeEl.parentNode.removeChild(fadeEl);
                         }
                     }, 50);
                 }
@@ -176,49 +174,39 @@
         }
 
         function createHotspot(data) {
-            // الجسم الرئيسي (السهم/الكرة)
+            // الوعاء الرئيسي للسهم
             const el = document.createElement('a-entity');
             el.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
             el.setAttribute('look-at', '[camera]');
             
-            // التصميم الجرافيكي للسهم (كرة خضراء + حلقة)
-            // يمكنك استبدال هذا بصورة سهم (a-image)
+            // شكل السهم (كرة خضراء)
             const sphere = document.createElement('a-sphere');
             sphere.setAttribute('radius', '0.3');
             sphere.setAttribute('color', '#2ecc71');
             sphere.setAttribute('opacity', '0.8');
-            sphere.setAttribute('class', 'clickable'); // مهم للتفاعل
+            sphere.setAttribute('class', 'clickable');
             
-            // إضافة أنيميشن نبض بسيط
+            // أنيميشن نبض
             sphere.setAttribute('animation', 'property: scale; to: 1.1 1.1 1.1; dir: alternate; loop: true; dur: 1000');
             
-            // نص توضيحي فوق السهم
-            if (data.text) {
-                const text = document.createElement('a-text');
-                text.setAttribute('value', data.text);
-                text.setAttribute('align', 'center');
-                text.setAttribute('position', '0 0.6 0');
-                text.setAttribute('scale', '1.5 1.5 1.5');
-                text.setAttribute('side', 'double'); // ليظهر من الجهتين
-                el.appendChild(text);
-            }
-
+            // إضافة حلقة بيضاء جمالية
+            const ring = document.createElement('a-ring');
+            ring.setAttribute('color', 'white');
+            ring.setAttribute('radius-inner', '0.35');
+            ring.setAttribute('radius-outer', '0.4');
+            el.appendChild(ring);
             el.appendChild(sphere);
 
             // حدث النقر
             sphere.addEventListener('click', () => {
-                // عند النقر، نحمل المشهد الجديد
-                // هنا نفترض أن الهدف هو ملف صورة جديد
-                // سنقوم بإنشاء كائن مشهد مؤقت للصورة الجديدة
+                // عند النقر، ننتقل للصورة التالية
+                // (نقوم بإنشاء إعدادات مؤقتة للصورة الجديدة بدون نقاط)
+                // إذا أردت نقاطاً للصورة الثانية، أضفها في scenesConfig واستدعها هنا
                 loadSceneData({ image: data.target, hotspots: [] });
-                
-                // ملاحظة: إذا أردت نقاطاً في الصورة الثانية، يجب تعريفها في scenesConfig
-                // واستدعائها هنا بدلاً من مجرد تمرير رابط الصورة.
             });
 
             container.appendChild(el);
         }
-
     </script>
 </body>
 </html>
