@@ -3,52 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>جولة عصام الكهربائي (Gaze & Hand)</title>
+    <title>جولة عصام الكهربائي</title>
     
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        /* تنسيق خاص بسيط لشاشة الترحيب في العارض */
+        #welcome-screen h1 { color: #f1c40f; margin-bottom: 10px; font-size: 2.5rem; }
+        #welcome-screen h3 { color: white; margin-bottom: 30px; font-weight: normal; }
+    </style>
+
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
-    <script>
-        AFRAME.registerComponent('look-at', {
-            schema: { type: 'selector' },
-            tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
-        });
-
-        AFRAME.registerComponent('zoom-controls', {
-            schema: { min: {default: 30}, max: {default: 80} },
-            init: function () {
-                this.camera = this.el.components.camera.camera;
-                window.addEventListener('wheel', (e) => {
-                    this.camera.fov += e.deltaY * 0.05;
-                    this.camera.fov = Math.max(30, Math.min(80, this.camera.fov));
-                    this.camera.updateProjectionMatrix();
-                });
-            }
-        });
-    </script>
-
-    <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        
-        #welcome-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #000 0%, #222 100%);
-            color: white; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        #start-btn {
-            padding: 15px 50px; font-size: 1.5rem; border: 2px solid #f1c40f;
-            background: transparent; color: #f1c40f; border-radius: 50px;
-            cursor: pointer; margin-top: 30px; font-weight: bold;
-        }
-        #start-btn:hover { background: #f1c40f; color: black; }
-    </style>
-</head>
+    <script src="js/core.js"></script>   <script src="js/viewer.js"></script> </head>
 <body>
 
-    <div id="welcome-screen">
-        <h1 style="color: #f1c40f;">جولة عصام الكهربائي</h1>
+    <div id="welcome-screen" class="fullscreen-overlay">
+        <h1>جولة عصام الكهربائي</h1>
         <h3>0501618112</h3>
-        <button id="start-btn" onclick="startExperience()">ابدأ الجولة</button>
+        <button class="btn-main" onclick="Viewer.start()">ابدأ الجولة</button>
     </div>
 
     <a-scene renderer="antialias: true; colorManagement: true;" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
@@ -59,31 +31,27 @@
 
         <a-entity id="scene-audio" sound="autoplay: false"></a-entity>
 
-        <a-sky id="sky" src="#current-img" rotation="0 -90 0" class="clickable" onclick="hideInfoPanel()"></a-sky>
+        <a-sky id="sky" src="#current-img" rotation="0 0 0" class="clickable" onclick="Viewer.hideInfo()"></a-sky>
 
         <a-entity id="hotspots"></a-entity>
 
-        <a-entity id="info-panel" visible="false" position="0 0 -2" scale="0 0 0">
+        <a-entity id="info-panel" visible="false" position="0 0 0" scale="0 0 0">
             <a-plane color="black" opacity="0.8" width="2" height="1"></a-plane>
-            <a-text id="info-text" value="Info" align="center" color="white" width="1.8"></a-text>
+            <a-text id="info-text" value="" align="center" color="white" width="1.8"></a-text>
         </a-entity>
 
         <a-entity id="rig" position="0 1.6 0">
             
             <a-camera id="camera" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true" zoom-controls>
-                
-                <a-cursor id="gaze-cursor"
+                <a-cursor id="gaze-cursor" 
                           fuse="true" 
-                          fuse-timeout="1500"
-                          raycaster="objects: .clickable"
-                          position="0 0 -1"
-                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                          material="color: white; shader: flat"
-                          animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 150; from: 0.1 0.1 0.1; to: 1 1 1"
-                          animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1500; from: 1 1 1; to: 0.1 0.1 0.1"
-                          animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 500; to: 1 1 1">
+                          fuse-timeout="1500" 
+                          raycaster="objects: .clickable" 
+                          position="0 0 -1" 
+                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" 
+                          material="color: white; shader: flat; opacity: 0.8" 
+                          visible="true">
                 </a-cursor>
-
             </a-camera>
 
             <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: #2ecc71"></a-entity>
@@ -92,7 +60,6 @@
             <a-entity hand-tracking-controls="hand: left">
                  <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: #2ecc71" position="0 0 0"></a-entity>
             </a-entity>
-            
             <a-entity hand-tracking-controls="hand: right">
                  <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: #2ecc71" position="0 0 0"></a-entity>
             </a-entity>
@@ -100,184 +67,5 @@
         </a-entity>
 
     </a-scene>
-
-    <script>
-        const sky = document.getElementById('sky');
-        const container = document.getElementById('hotspots');
-        const infoPanel = document.getElementById('info-panel');
-        const infoText = document.getElementById('info-text');
-        const audioEntity = document.getElementById('scene-audio');
-        const welcomeScreen = document.getElementById('welcome-screen');
-        const gazeCursor = document.getElementById('gaze-cursor'); // المؤشر
-        let hideTimer;
-
-        function startExperience() {
-            welcomeScreen.style.display = 'none';
-            const startImg = document.getElementById('current-img').getAttribute('src');
-            loadExternalData(startImg);
-        }
-
-        function loadExternalData(imagePath) {
-            const filename = imagePath.split('/').pop().split('.')[0];
-            const jsonPath = `./hotspots/${filename}.json`;
-
-            audioEntity.components.sound.stopSound();
-
-            fetch(jsonPath)
-                .then(res => { if (!res.ok) throw new Error("No JSON"); return res.json(); })
-                .then(data => {
-                    
-                    // 1. إعدادات المؤشر (Gaze Settings) من JSON
-                    if (data.settings) {
-                        // تفعيل أو إلغاء الـ fuse
-                        gazeCursor.setAttribute('fuse', data.settings.enableFuse);
-                        
-                        if (data.settings.enableFuse) {
-                            // ضبط الزمن
-                            const duration = data.settings.fuseDuration || 1500;
-                            gazeCursor.setAttribute('fuse-timeout', duration);
-                            
-                            // تحديث الأنيميشن ليتوافق مع الزمن الجديد
-                            gazeCursor.setAttribute('animation__fusing', `property: scale; startEvents: fusing; easing: linear; dur: ${duration}; from: 1 1 1; to: 0.1 0.1 0.1`);
-                        }
-                    } else {
-                        // افتراضي إذا لم يوجد إعدادات
-                        gazeCursor.setAttribute('fuse', true);
-                        gazeCursor.setAttribute('fuse-timeout', 1500);
-                    }
-
-                    // 2. الصوت
-                    if (data.audio && data.audio.src) {
-                        audioEntity.setAttribute('sound', {
-                            src: data.audio.src,
-                            loop: data.audio.loop || false,
-                            volume: data.audio.volume || 1.0,
-                            autoplay: true
-                        });
-                        setTimeout(() => audioEntity.components.sound.playSound(), 100);
-                    }
-
-                    // 3. النقاط
-                    container.innerHTML = ''; 
-                    if (data.hotspots) {
-                        data.hotspots.forEach(spot => createSmartHotspot(spot));
-                    }
-                })
-                .catch(err => {
-                    console.log("Error:", err);
-                    container.innerHTML = '';
-                });
-        }
-
-        function createSmartHotspot(data) {
-            const el = document.createElement('a-entity');
-            el.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
-            el.setAttribute('look-at', '[camera]');
-
-            let visualElement;
-
-            // المجسمات
-            if (data.geometry) {
-                visualElement = document.createElement('a-entity');
-                visualElement.setAttribute('geometry', `primitive: ${data.geometry}`);
-                visualElement.setAttribute('material', `color: ${data.color || 'white'}; opacity: 0.9`);
-            }
-            // الصور
-            else if (data.image) {
-                visualElement = document.createElement('a-image');
-                visualElement.setAttribute('src', data.image);
-            }
-            // الرموز
-            else if (data.char) {
-                visualElement = document.createElement('a-image');
-                const iconUrl = generateTextTexture(data.char, data.color || 'white');
-                visualElement.setAttribute('src', iconUrl);
-            } 
-            // الافتراضي
-            else {
-                visualElement = document.createElement('a-sphere');
-                visualElement.setAttribute('radius', '0.2');
-                visualElement.setAttribute('color', 'white');
-            }
-
-            const scale = data.scale || "1 1 1";
-            visualElement.setAttribute('scale', scale);
-            visualElement.setAttribute('class', 'clickable'); // هام جداً للمؤشر
-            
-            // أنيميشن النبض
-            visualElement.setAttribute('animation', 'property: scale; dir: alternate; dur: 1500; loop: true; to: ' + parseScale(scale, 1.2));
-
-            el.appendChild(visualElement);
-
-            // حدث النقر (يعمل سواء باليد، الماوس، أو اكتمال النظر)
-            visualElement.addEventListener('click', (evt) => {
-                // إيقاف التكرار إذا تم النقر بوسيلتين في نفس الوقت
-                if(evt) evt.stopPropagation();
-                
-                if (data.type === 'link') {
-                    changeScene(data.target);
-                } else if (data.type === 'info') {
-                    showInfoPanel(data.text, el.getAttribute('position'));
-                }
-            });
-            
-            // أحداث للتفاعل البصري مع المؤشر
-            visualElement.addEventListener('mouseenter', () => {
-                // يمكن إضافة صوت خفيف عند المرور
-            });
-
-            container.appendChild(el);
-        }
-
-        function generateTextTexture(text, color) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.font = 'bold 150px Arial, sans-serif';
-            ctx.fillStyle = color;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 10;
-            ctx.fillText(text, 128, 128);
-            return canvas.toDataURL('image/png');
-        }
-
-        function parseScale(scaleStr, factor) {
-            if (typeof scaleStr === 'string') {
-                const s = scaleStr.split(' ').map(Number);
-                if(s.length === 1) return `${s[0]*factor} ${s[0]*factor} ${s[0]*factor}`;
-                return `${s[0]*factor} ${s[1]*factor} ${s[2]*factor}`;
-            }
-            return `${factor} ${factor} ${factor}`;
-        }
-
-        function changeScene(newUrl) {
-            hideInfoPanel();
-            sky.setAttribute('color', '#000');
-            setTimeout(() => {
-                sky.setAttribute('src', newUrl);
-                sky.removeAttribute('color');
-                loadExternalData(newUrl);
-            }, 300);
-        }
-
-        function showInfoPanel(text, pos) {
-            if (hideTimer) clearTimeout(hideTimer);
-            infoText.setAttribute('value', text);
-            const x = parseFloat(pos.x);
-            const y = parseFloat(pos.y) + 0.8;
-            const z = parseFloat(pos.z);
-            infoPanel.setAttribute('position', `${x} ${y} ${z}`);
-            infoPanel.setAttribute('look-at', '[camera]');
-            infoPanel.setAttribute('visible', true);
-            infoPanel.setAttribute('scale', '1 1 1');
-            hideTimer = setTimeout(() => hideInfoPanel(), 3000);
-        }
-
-        function hideInfoPanel() {
-            infoPanel.setAttribute('visible', false);
-            infoPanel.setAttribute('scale', '0 0 0');
-            if (hideTimer) clearTimeout(hideTimer);
-        }
-    </script>
 </body>
 </html>

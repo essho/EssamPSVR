@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحرر (Admin Panel)</title>
+    
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/editor.css">
+
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <script src="js/core.js"></script>   <script src="js/editor.js"></script> </head>
+<body>
+
+    <div id="login-screen" class="fullscreen-overlay">
+        <div class="login-box">
+            <h2 style="color: #f1c40f;">تسجيل الدخول</h2>
+            <input type="text" id="username" placeholder="اسم المستخدم">
+            <input type="password" id="password" placeholder="كلمة المرور">
+            <button class="btn-main" onclick="Editor.login()">دخول</button>
+            <p id="login-msg" style="color: #e74c3c; font-size: 14px; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <div id="setup-modal">
+        <div class="setup-content" dir="rtl">
+            <h2 style="text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px;">مشروع جديد</h2>
+            
+            <div class="form-group">
+                <label>1. اختر الصورة</label>
+                <input type="file" id="setup-img-file" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>2. اسم الملف (للحفظ)</label>
+                <input type="text" id="setup-img-name" placeholder="سيظهر تلقائياً">
+            </div>
+
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0;">خيارات الصوت</h4>
+                <div class="form-group">
+                    <label>ملف الصوت (اختياري)</label>
+                    <input type="file" id="setup-audio-file" accept="audio/*">
+                </div>
+                <div class="form-group">
+                    <label>التكرار</label>
+                    <select id="setup-audio-loop">
+                        <option value="false">مرة واحدة</option>
+                        <option value="true">تكرار مستمر</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>مستوى الصوت</label>
+                    <input type="range" id="setup-audio-vol" min="0" max="1" step="0.1" value="1.0">
+                </div>
+            </div>
+
+            <div style="background: #eafaf1; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0;">تفاعل النظر (Fuse)</h4>
+                <div class="form-group">
+                    <label>تفعيل؟</label>
+                    <select id="setup-fuse-enable">
+                        <option value="true">نعم</option>
+                        <option value="false">لا</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الزمن (ms)</label>
+                    <input type="number" id="setup-fuse-dur" value="1500">
+                </div>
+            </div>
+
+            <button class="btn-main" style="width:100%" onclick="Editor.confirmSetup()">بدء التصميم</button>
+        </div>
+    </div>
+
+    <div id="editor-ui">
+        <div id="toolbar">
+            <span id="scene-title" style="font-weight:bold; margin-left:20px; color:#f1c40f;"></span>
+            <button class="tool-btn" id="mode-add-link" onclick="Editor.setMode('link')">➕ انتقال</button>
+            <button class="tool-btn" id="mode-add-info" onclick="Editor.setMode('info')">ℹ️ معلومة</button>
+            <button class="tool-btn" onclick="Editor.setMode('select')">👆 تحديد</button>
+<div style="flex-grow: 1;"></div>
+
+<button class="tool-btn" style="background:#8e44ad; margin-left:10px;" onclick="Editor.setStartView()">👁️ تعيين كبداية</button>
+
+<button class="tool-btn save" onclick="Editor.exportJSON()">💾 حفظ JSON</button>
+        </div>
+
+        <div id="properties-panel" dir="rtl">
+            <h3>تعديل العنصر</h3>
+            
+            <div class="prop-row">
+                <label>النوع</label>
+                <select id="prop-visual-type" onchange="Editor.updateSelected()">
+                    <option value="geometry">مجسم</option>
+                    <option value="image">صورة</option>
+                    <option value="char">رمز</option>
+                </select>
+            </div>
+
+            <div id="group-geo" class="prop-row">
+                <label>الشكل</label>
+                <select id="prop-geo" onchange="Editor.updateSelected()">
+                    <option value="sphere">كرة</option>
+                    <option value="box">مكعب</option>
+                    <option value="cylinder">أسطوانة</option>
+                    <option value="triangle">مثلث</option>
+                </select>
+            </div>
+
+            <div id="group-img" class="prop-row" style="display:none">
+                <label>رابط الصورة</label>
+                <input type="text" id="prop-img-src" value="./icons/arrow.png" onchange="Editor.updateSelected()">
+            </div>
+
+            <div id="group-char" class="prop-row" style="display:none">
+                <label>الرمز</label>
+                <input type="text" id="prop-char" value="➡️" onchange="Editor.updateSelected()">
+            </div>
+
+            <div class="prop-row">
+                <label>اللون</label>
+                <input type="color" id="prop-color" value="#ffffff" style="height:40px; width:100%;" onchange="Editor.updateSelected()">
+            </div>
+
+            <div class="prop-row">
+                <label>الحجم</label>
+                <input type="text" id="prop-scale" value="1 1 1" onchange="Editor.updateSelected()">
+            </div>
+
+            <hr>
+
+            <div class="prop-row" id="prop-target-div">
+                <label>الصورة الهدف</label>
+                <input type="text" id="prop-target" placeholder="./panoramas/scene-2.jpg" onchange="Editor.updateSelected()">
+            </div>
+
+            <div class="prop-row" id="prop-text-div">
+                <label>النص</label>
+                <textarea id="prop-text" rows="4" style="width:100%" onchange="Editor.updateSelected()"></textarea>
+            </div>
+
+            <button onclick="Editor.deleteSelected()" style="background:#c0392b; color:white; width:100%; margin-top:20px; padding:10px; border:none; border-radius:4px; cursor:pointer;">حذف</button>
+            <button onclick="Editor.closePanel()" style="background:#95a5a6; color:white; width:100%; margin-top:5px; padding:8px; border:none; border-radius:4px; cursor:pointer;">إغلاق</button>
+        </div>
+
+        <div id="status-bar">الحالة: <span id="current-mode">انتظار</span></div>
+    </div>
+
+    <a-scene embedded style="height: 100vh; width: 100vw;" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        <a-assets><img id="preview-blob" src=""></a-assets>
+        
+        <a-sky id="sky" class="clickable"></a-sky>
+        <a-entity id="hotspots-container"></a-entity>
+        <a-camera position="0 1.6 0" look-controls="reverseMouseDrag: false"></a-camera>
+    </a-scene>
+
+    <script>
+        window.onload = function() {
+            if(Editor && Editor.initFileListeners) {
+                Editor.initFileListeners();
+            }
+        };
+    </script>
+</body>
+</html>

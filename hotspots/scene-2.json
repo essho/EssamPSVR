@@ -1,38 +1,43 @@
 {
-  "audio": {
-    "src": "./sounds/intro.mp3",
-    "loop": false, 
-    "volume": 1.0
+  "settings": {
+    "enableFuse": false,
+    "fuseDuration": 1500,
+    "startRotation": {
+      "x": 48.7,
+      "y": -89.27
+    }
   },
+  "audio": {},
   "hotspots": [
     {
+      "type": "info",
+      "x": 8.243,
+      "y": 5.391,
+      "z": -4.204,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "image": "./icons/info.png",
+      "text": ""
+    },
+    {
       "type": "link",
-      "x": 5, "y": 1, "z": -4,
-      "target": "./panoramas/scene-1.jpg",
-      
-      "//_تعليق": "هنا نستخدم مجسم ثلاثي الأبعاد",
-      "geometry": "sphere",
-      "color": "yellow",
-      "scale": "0.5 0.5 0.5"
+      "x": 2.598,
+      "y": -0.662,
+      "z": -9.388,
+      "color": "#cc2e82",
+      "scale": "1.5 1.5 1.5",
+      "geometry": "triangle",
+      "target": ""
     },
     {
       "type": "info",
-      "x": -2, "y": 1.5, "z": 3,
-      "text": "Essam",
-
-      "//_تعليق": "هنا لم نكتب geometry فسيقوم الكود بالبحث عن صورة",
-      "image": "./icons/info.png",
-      "scale": "1 1 1"
-    },
-    {
-      "type": "link",
-      "x": 0, "y": 1, "z": 4,
-      "target": "./panoramas/intro-video.mp4",
-
-      "//_تعليق": "لا مجسم ولا صورة؟ سيبحث عن الرمز النصي",
-      "char": "يحيى️",
-      "color": "red",
-      "scale": "4 0.5 0.5"
+      "x": -7.839,
+      "y": 1.142,
+      "z": -6.192,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "char": "الغاز",
+      "text": ""
     }
   ]
 }

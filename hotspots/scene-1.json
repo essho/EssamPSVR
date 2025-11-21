@@ -1,42 +1,63 @@
 {
   "settings": {
     "enableFuse": true,
-    "fuseDuration": 1500
+    "fuseDuration": 1500,
+    "startRotation": {
+      "x": 48.7,
+      "y": -89.27
+    }
   },
-  "audio": {
-    "src": "./sounds/intro.mp3",
-    "loop": false,
-    "volume": 1.0
-  },
+  "audio": {},
   "hotspots": [
     {
+      "type": "info",
+      "x": 9.44,
+      "y": 4.884,
+      "z": 0.318,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "image": "./icons/info.png",
+      "text": ""
+    },
+    {
       "type": "link",
-      "x": 5, "y": 1, "z": -4,
-      "target": "./panoramas/scene-2.jpg",
-      
-      "//_تعليق": "هنا نستخدم مجسم ثلاثي الأبعاد",
-      "geometry": "sphere",
-      "color": "red",
-      "scale": "0.5 0.5 0.5"
+      "x": -1.653,
+      "y": 0.395,
+      "z": 9.789,
+      "color": "#1824c3",
+      "scale": "1.5 1.5 1.5",
+      "geometry": "triangle",
+      "target": "./panoramas/scene-2.jpg"
     },
     {
       "type": "info",
-      "x": -2, "y": 1.5, "z": 3,
-      "text": "Essam",
-
-      "//_تعليق": "هنا لم نكتب geometry فسيقوم الكود بالبحث عن صورة",
-      "image": "./icons/info.png",
-      "scale": "1 1 1"
+      "x": -8.035,
+      "y": 0.899,
+      "z": 5.911,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "char": "الغاز",
+      "text": ""
     },
     {
-      "type": "link",
-      "x": 0, "y": 1, "z": 4,
-      "target": "./panoramas/intro-video.mp4",
-
-      "//_تعليق": "لا مجسم ولا صورة؟ سيبحث عن الرمز النصي",
-      "char": "عصام",
-      "color": "yellow",
-      "scale": "4 0.5 0.5"
+      "type": "info",
+      "x": -2.841,
+      "y": 10.507,
+      "z": -3.549,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "char": "قسام",
+      "text": ""
+    },
+    {
+      "type": "info",
+      "x": -1.786,
+      "y": 8.697,
+      "z": 6.815,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "char": "قسام",
+      "text": ""
     }
   ]
 }
