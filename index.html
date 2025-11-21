@@ -52,32 +52,33 @@
             <a-text id="info-text" value="Info" align="center" color="white" width="1.8"></a-text>
         </a-entity>
 
-        <a-entity id="rig" position="0 1.6 0">
+<a-entity id="rig" position="0 1.6 0">
             
             <a-camera id="camera" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true" zoom-controls>
                 <a-entity cursor="fuse: false" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat" visible="false"></a-entity>
             </a-camera>
 
-            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: red"></a-entity>
-            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10; lineColor: red"></a-entity>
+            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: #FF0000"></a-entity>
+            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10; lineColor: #FF0000"></a-entity>
 
-            <a-entity hand-tracking-controls="hand: left">
-                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: #ff0000; interval: 100"
-                          position="0 0 0" 
-                          rotation="0 0 0"
-                          cursor="fuse: false"> </a-entity>
+            <a-entity id="left-hand" hand-tracking-controls="hand: left; modelStyle: dots">
+                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; origin: 0 0 0; direction: 0 0 -1"
+                          position="0 0 0"
+                          rotation="-15 0 0" 
+                          line="color: #00FF00; opacity: 0.8; start: 0 0 0; end: 0 0 -5">
+                </a-entity>
             </a-entity>
 
-            <a-entity hand-tracking-controls="hand: right">
-                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; lineColor: #ff0000; interval: 100"
-                          position="0 0 0" 
-                          rotation="0 0 0"
-                          cursor="fuse: false">
+            <a-entity id="right-hand" hand-tracking-controls="hand: right; modelStyle: dots">
+                <a-entity raycaster="objects: .clickable; showLine: true; far: 5; origin: 0 0 0; direction: 0 0 -1"
+                          position="0 0 0"
+                          rotation="-15 0 0" 
+                          line="color: #00FF00; opacity: 0.8; start: 0 0 0; end: 0 0 -5">
                 </a-entity>
             </a-entity>
 
         </a-entity>
-
+		
     </a-scene>
 
     <script>
