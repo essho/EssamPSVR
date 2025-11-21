@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>جولة 360 (نسخة مستقرة)</title>
+    <title>جولة 360 الديناميكية</title>
     
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
@@ -14,15 +14,16 @@
             tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
         });
 
-        // 2. مكون الزوم (Zoom) للجوال والكمبيوتر
+        // 2. مكون الزوم المحسن (يوقف الدوران أثناء التكبير)
         AFRAME.registerComponent('zoom-controls', {
             schema: {
                 min: {default: 30},
                 max: {default: 80},
-                sensitivity: {default: 1}
+                sensitivity: {default: 1.5}
             },
             init: function () {
                 this.camera = this.el.components.camera.camera;
+                this.lookControls = this.el.components['look-controls'];
                 
                 // للماوس
                 window.addEventListener('wheel', (e) => {
@@ -30,10 +31,16 @@
                     this.zoom(delta);
                 });
 
-                // للمس (Touch Pinch)
+                // للمس
                 this.touchStartDistance = 0;
+                this.isPinching = false;
+
                 window.addEventListener('touchstart', (e) => {
                     if (e.touches.length === 2) {
+                        this.isPinching = true;
+                        // إيقاف الدوران فوراً عند اكتشاف إصبعين
+                        if(this.lookControls) this.lookControls.data.touchEnabled = false;
+                        
                         this.touchStartDistance = Math.hypot(
                             e.touches[0].pageX - e.touches[1].pageX,
                             e.touches[0].pageY - e.touches[1].pageY
@@ -42,7 +49,7 @@
                 });
 
                 window.addEventListener('touchmove', (e) => {
-                    if (e.touches.length === 2) {
+                    if (this.isPinching && e.touches.length === 2) {
                         const currentDistance = Math.hypot(
                             e.touches[0].pageX - e.touches[1].pageX,
                             e.touches[0].pageY - e.touches[1].pageY
@@ -50,6 +57,14 @@
                         const delta = this.touchStartDistance - currentDistance;
                         this.zoom(delta * 0.05);
                         this.touchStartDistance = currentDistance;
+                    }
+                });
+
+                window.addEventListener('touchend', (e) => {
+                    // إعادة تفعيل الدوران عند رفع الأصابع
+                    if (e.touches.length < 2) {
+                        this.isPinching = false;
+                        if(this.lookControls) this.lookControls.data.touchEnabled = true;
                     }
                 });
             },
@@ -64,17 +79,30 @@
 
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
+        /* تصميم بسيط لنوافذ المعلومات */
+        .info-popup {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: rgba(0,0,0,0.8);
+            color: white; padding: 20px; border-radius: 10px; font-family: sans-serif;
+            text-align: center; z-index: 999; border: 1px solid white;
+        }
     </style>
 </head>
 <body>
 
+    <div id="info-modal" class="info-popup">
+        <p id="info-text"></p>
+        <button onclick="document.getElementById('info-modal').style.display='none'" 
+                style="padding:5px 15px; cursor:pointer;">إغلاق</button>
+    </div>
+
     <a-scene renderer="antialias: true; colorManagement: true;" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
         
         <a-assets>
-            <img id="scene1-img" src="./panoramas/scene-1.jpg">
+            <img id="current-img" src="./panoramas/scene-1.jpg">
         </a-assets>
 
-        <a-sky id="sky" src="#scene1-img" rotation="0 -90 0"></a-sky>
+        <a-sky id="sky" src="#current-img" rotation="0 -90 0"></a-sky>
 
         <a-entity id="hotspots"></a-entity>
 
@@ -85,64 +113,41 @@
                 look-controls="magicWindowTrackingEnabled: true; touchEnabled: true; reverseMouseDrag: false" 
                 wasd-controls="enabled: false"
                 zoom-controls>
-                
-                <a-entity cursor="fuse: false" position="0 0 -1"
-                          geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
-                          material="color: white; shader: flat; opacity: 0.5"
-                          visible="false"> </a-entity>
             </a-camera>
 
-            <a-entity id="left-hand" hand-tracking-controls="hand: left"></a-entity>
-            <a-entity id="right-hand" hand-tracking-controls="hand: right"></a-entity>
+            <a-entity id="left-hand" 
+                      hand-tracking-controls="hand: left"
+                      raycaster="objects: .clickable; showLine: true; far: 5">
+            </a-entity>
+            <a-entity id="right-hand" 
+                      hand-tracking-controls="hand: right"
+                      raycaster="objects: .clickable; showLine: true; far: 5">
+            </a-entity>
 
-            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 5"></a-entity>
-            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 5"></a-entity>
+            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: red;"></a-entity>
+            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10; lineColor: red;"></a-entity>
 
         </a-entity>
 
     </a-scene>
 
     <script>
-        // ==========================================
-        // إعدادات المشاهد والنقاط
-        // ==========================================
-        
-        const scenesConfig = {
-            // المشهد الأول
-            'start': {
-                image: './panoramas/scene-1.jpg', 
-                hotspots: [
-                    // السهم الأول (بدون نص لتجنب الأخطاء)
-                    { 
-                        x: 5, y: 1, z: -4,          
-                        target: './panoramas/scene-2.jpg'
-                    },
-                    // مثال لسهم ثاني (عدل الاحداثيات حسب رغبتك)
-                    // { x: -2, y: 1, z: 5, target: './panoramas/kitchen.jpg' }
-                ]
-            }
-        };
-
-        // ==========================================
-        // تشغيل النظام
-        // ==========================================
-
         const sky = document.getElementById('sky');
         const container = document.getElementById('hotspots');
 
-        // بدء التحميل
-        loadSceneData(scenesConfig['start']);
+        // البدء بتحميل الصورة الموجودة في الـ HTML
+        // نستخرج اسم الملف: "panoramas/scene-1.jpg" -> "scene-1"
+        const initialSrc = document.getElementById('current-img').getAttribute('src');
+        loadExternalData(initialSrc);
 
-        function loadSceneData(sceneData) {
-            if (!sceneData) return;
-
-            // 1. تأثير الانتقال (Fade)
+        // دالة لتحميل الصورة + بياناتها الخارجية
+        function changeScene(imagePath) {
+            // 1. تأثير Fade Out
             const fadeEl = document.createElement('a-sphere');
             fadeEl.setAttribute('radius', 0.1);
             fadeEl.setAttribute('material', 'color: black; side: double; transparent: true; opacity: 0');
             document.getElementById('camera').appendChild(fadeEl);
 
-            // Fade Out
             let op = 0;
             const fadeOut = setInterval(() => {
                 op += 0.1;
@@ -151,13 +156,11 @@
                     clearInterval(fadeOut);
                     
                     // تغيير الصورة
-                    sky.setAttribute('src', sceneData.image || sceneData);
-                    container.innerHTML = ''; // مسح الأسهم القديمة
+                    sky.setAttribute('src', imagePath);
+                    container.innerHTML = ''; // مسح النقاط القديمة
 
-                    // إضافة الأسهم الجديدة
-                    if (sceneData.hotspots) {
-                        sceneData.hotspots.forEach(spot => createHotspot(spot));
-                    }
+                    // تحميل البيانات الجديدة
+                    loadExternalData(imagePath);
 
                     // Fade In
                     let op2 = 1;
@@ -173,36 +176,75 @@
             }, 50);
         }
 
+        // دالة قراءة ملف JSON
+        function loadExternalData(imagePath) {
+            // استخراج اسم الملف النقي (بدون مسار وبدون امتداد)
+            // مثال: "./panoramas/scene-1.jpg" -> "scene-1"
+            const filename = imagePath.split('/').pop().split('.')[0];
+            
+            // بناء مسار ملف JSON
+            const jsonPath = `./hotspots/${filename}.json`;
+
+            console.log("Loading data from:", jsonPath);
+
+            fetch(jsonPath)
+                .then(response => {
+                    if (!response.ok) throw new Error("JSON not found");
+                    return response.json();
+                })
+                .then(data => {
+                    // إذا نجح التحميل، نرسم النقاط
+                    data.forEach(spot => createHotspot(spot));
+                })
+                .catch(err => {
+                    console.warn("No hotspot file found for this scene, or error loading:", err);
+                    // لا نفعل شيئاً، فقط نعرض الصورة بدون نقاط
+                });
+        }
+
         function createHotspot(data) {
-            // الوعاء الرئيسي للسهم
             const el = document.createElement('a-entity');
             el.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
             el.setAttribute('look-at', '[camera]');
             
-            // شكل السهم (كرة خضراء)
-            const sphere = document.createElement('a-sphere');
-            sphere.setAttribute('radius', '0.3');
-            sphere.setAttribute('color', '#2ecc71');
-            sphere.setAttribute('opacity', '0.8');
-            sphere.setAttribute('class', 'clickable');
+            // تحديد الشكل واللون حسب النوع
+            let geometry, color, scale;
+            if (data.type === 'link') {
+                geometry = 'primitive: sphere; radius: 0.3';
+                color = '#2ecc71'; // أخضر للانتقال
+                // حلقة حول السهم
+                const ring = document.createElement('a-ring');
+                ring.setAttribute('color', 'white');
+                ring.setAttribute('radius-inner', '0.35');
+                ring.setAttribute('radius-outer', '0.4');
+                el.appendChild(ring);
+            } else {
+                // نوع info أو غيره
+                geometry = 'primitive: box';
+                color = '#3498db'; // أزرق للمعلومات
+                el.setAttribute('scale', '0.4 0.4 0.4');
+                // دوران للمكعب
+                el.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 5000; easing: linear');
+            }
+
+            const shape = document.createElement('a-entity');
+            shape.setAttribute('geometry', geometry);
+            shape.setAttribute('material', `color: ${color}; opacity: 0.9`);
+            shape.setAttribute('class', 'clickable'); // مهم للتفاعل
             
-            // أنيميشن نبض
-            sphere.setAttribute('animation', 'property: scale; to: 1.1 1.1 1.1; dir: alternate; loop: true; dur: 1000');
-            
-            // إضافة حلقة بيضاء جمالية
-            const ring = document.createElement('a-ring');
-            ring.setAttribute('color', 'white');
-            ring.setAttribute('radius-inner', '0.35');
-            ring.setAttribute('radius-outer', '0.4');
-            el.appendChild(ring);
-            el.appendChild(sphere);
+            // نبض بسيط
+            shape.setAttribute('animation__scale', 'property: scale; dir: alternate; dur: 1000; loop: true; to: 1.1 1.1 1.1');
+
+            el.appendChild(shape);
 
             // حدث النقر
-            sphere.addEventListener('click', () => {
-                // عند النقر، ننتقل للصورة التالية
-                // (نقوم بإنشاء إعدادات مؤقتة للصورة الجديدة بدون نقاط)
-                // إذا أردت نقاطاً للصورة الثانية، أضفها في scenesConfig واستدعها هنا
-                loadSceneData({ image: data.target, hotspots: [] });
+            shape.addEventListener('click', () => {
+                if (data.type === 'link') {
+                    changeScene(data.target);
+                } else if (data.type === 'info') {
+                    document.getElementById('info-text').innerText = data.text;
+                    document.getElementById('info-modal').style.display = 'block';
+                }
             });
 
             container.appendChild(el);
