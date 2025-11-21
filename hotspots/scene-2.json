@@ -1,43 +1,53 @@
 {
   "settings": {
-    "enableFuse": false,
+    "enableFuse": true,
     "fuseDuration": 1500,
     "startRotation": {
-      "x": 48.7,
-      "y": -89.27
+      "x": 52.25,
+      "y": -88.12
     }
   },
   "audio": {},
   "hotspots": [
     {
       "type": "info",
-      "x": 8.243,
-      "y": 5.391,
-      "z": -4.204,
+      "x": 8.193,
+      "y": 5.531,
+      "z": -4.174,
       "color": "#3498db",
       "scale": "1.5 1.5 1.5",
       "image": "./icons/info.png",
-      "text": "عصام"
+      "text": "Essam"
+    },
+    {
+      "type": "info",
+      "x": -7.802,
+      "y": 0.971,
+      "z": -6.224,
+      "color": "#3498db",
+      "scale": "1.5 1.5 1.5",
+      "char": "الغاز",
+      "text": "Gaz"
     },
     {
       "type": "link",
-      "x": 2.598,
-      "y": -0.662,
-      "z": -9.388,
-      "color": "#cc2e82",
+      "x": 2.57,
+      "y": -0.651,
+      "z": -9.398,
+      "color": "#324e3d",
       "scale": "1.5 1.5 1.5",
       "geometry": "triangle",
       "target": "./panoramas/scene-1.jpg"
     },
     {
       "type": "info",
-      "x": -7.839,
-      "y": 1.142,
-      "z": -6.192,
+      "x": 8.65,
+      "y": 4.255,
+      "z": -4.258,
       "color": "#3498db",
       "scale": "1.5 1.5 1.5",
-      "char": "الغاز",
-      "text": "الغاز",
+      "char": "عصام",
+      "text": ""
     }
   ]
 }

@@ -1,63 +1,47 @@
 {
   "settings": {
-    "enableFuse": true,
+    "enableFuse": false,
     "fuseDuration": 1500,
     "startRotation": {
-      "x": 48.7,
-      "y": -89.27
+      "x": 81.36,
+      "y": -86.52
     }
   },
-  "audio": {},
+  "audio": {
+    "src": "./sounds/intro.mp3",
+    "loop": false,
+    "volume": 1
+  },
   "hotspots": [
     {
       "type": "info",
-      "x": 9.44,
-      "y": 4.884,
-      "z": 0.318,
+      "x": 9.834,
+      "y": 3.412,
+      "z": 0.124,
       "color": "#3498db",
       "scale": "1.5 1.5 1.5",
       "image": "./icons/info.png",
       "text": "Essam"
     },
     {
-      "type": "link",
-      "x": -1.653,
-      "y": 0.395,
-      "z": 9.789,
-      "color": "#1824c3",
-      "scale": "1.5 1.5 1.5",
-      "geometry": "triangle",
-      "target": "./panoramas/scene-2.jpg"
-    },
-    {
       "type": "info",
-      "x": -8.035,
-      "y": 0.899,
-      "z": 5.911,
+      "x": -8.043,
+      "y": 1.211,
+      "z": 5.93,
       "color": "#3498db",
       "scale": "1.5 1.5 1.5",
       "char": "الغاز",
       "text": "Gaz"
     },
     {
-      "type": "info",
-      "x": -2.841,
-      "y": 10.507,
-      "z": -3.549,
-      "color": "#3498db",
+      "type": "link",
+      "x": -1.378,
+      "y": -0.163,
+      "z": 9.746,
+      "color": "#5d2ecc",
       "scale": "1.5 1.5 1.5",
-      "char": "قسام",
-      "text": "Box"
-    },
-    {
-      "type": "info",
-      "x": -1.786,
-      "y": 8.697,
-      "z": 6.815,
-      "color": "#3498db",
-      "scale": "1.5 1.5 1.5",
-      "char": "قسام",
-      "text": "Box"
+      "geometry": "triangle",
+      "target": "./panoramas/scene-2.jpg"
     }
   ]
 }
