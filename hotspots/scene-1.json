@@ -3,11 +3,11 @@
     "type": "link",
     "x": 5, "y": 1, "z": -4,
     "target": "./panoramas/scene-2.jpg",
-    "text": "انتقال للغرفة التالية"
+    "text": "go-2"
   },
   {
     "type": "info",
     "x": -2, "y": 1.5, "z": 3,
-    "text": "هذه لوحة فنية نادرة"
+    "text": "Essam1"
   }
 ]

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>جولة 360 - VR Ready</title>
+    <title>جولة 360 المتكاملة</title>
     
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
@@ -14,26 +14,26 @@
             tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
         });
 
-        // 2. مكون تحويل "القرص" باليد إلى "نقر" (Click)
-        AFRAME.registerComponent('hand-clicker', {
+        // 2. مكون خاص لتفعيل "القرص" (Pinch) كأنه نقرة زر
+        AFRAME.registerComponent('hand-click-trigger', {
             init: function () {
                 this.el.addEventListener('pinchstarted', (evt) => {
-                    // البحث عن العناصر التي يتقاطع معها شعاع اليد
-                    const raycasterEl = this.el;
-                    const intersectedEls = raycasterEl.components.raycaster.intersectedEls;
-                    
-                    if (intersectedEls.length > 0) {
-                        const target = intersectedEls[0];
-                        // التحقق مما إذا كان العنصر قابلاً للنقر
+                    // عند القيام بالقرص، نتحقق مما يشير إليه الليزر
+                    const raycaster = this.el.components.raycaster;
+                    if (raycaster && raycaster.intersectedEls.length > 0) {
+                        const target = raycaster.intersectedEls[0];
+                        // إذا كان الهدف قابلاً للنقر، نرسل له أمر النقر
                         if (target.classList.contains('clickable')) {
                             target.emit('click');
+                            // تأثير صوتي أو بصري بسيط (اختياري)
+                            console.log("Pinch Clicked on:", target.id);
                         }
                     }
                 });
             }
         });
 
-        // 3. مكون الزوم (تم تحسينه سابقاً)
+        // 3. مكون الزوم
         AFRAME.registerComponent('zoom-controls', {
             schema: { min: {default: 30}, max: {default: 80}, sensitivity: {default: 1.5} },
             init: function () {
@@ -79,15 +79,17 @@
         <a-sky id="sky" src="#current-img" rotation="0 -90 0"></a-sky>
         <a-entity id="hotspots"></a-entity>
 
-        <a-entity id="vr-info-panel" visible="false" position="0 0 -2">
-            <a-plane color="black" opacity="0.8" width="2" height="1" class="clickable"></a-plane>
+        <a-entity id="vr-info-panel" visible="false" position="0 0 -2" scale="0 0 0">
+            <a-animation attribute="scale" begin="open" to="1 1 1" dur="200"></a-animation>
+            <a-animation attribute="scale" begin="close" to="0 0 0" dur="200"></a-animation>
+
+            <a-plane color="#222" opacity="0.9" width="2" height="1.2" class="clickable"></a-plane>
             
-            <a-text id="vr-info-text" value="Hello" align="center" width="1.8" color="white" position="0 0.1 0.01"></a-text>
+            <a-text id="vr-info-text" value="Info Text" align="center" width="1.8" color="white" position="0 0.2 0.01"></a-text>
             
-            <a-entity position="0 -0.35 0.01" class="clickable" 
-                      onclick="document.getElementById('vr-info-panel').setAttribute('visible', false)">
-                <a-plane color="#e74c3c" width="0.5" height="0.15"></a-plane>
-                <a-text value="CLOSE" align="center" width="2" position="0 0 0.01"></a-text>
+            <a-entity id="btn-close" position="0 -0.4 0.02" class="clickable">
+                <a-plane color="#c0392b" width="0.6" height="0.2"></a-plane>
+                <a-text value="CLOSE" align="center" width="3" position="0 0 0.01"></a-text>
             </a-entity>
         </a-entity>
 
@@ -96,13 +98,15 @@
 
             <a-entity id="left-hand" 
                       hand-tracking-controls="hand: left"
-                      raycaster="objects: .clickable; showLine: true; far: 5"
-                      hand-clicker> </a-entity>
+                      raycaster="objects: .clickable; showLine: true; far: 5; lineColor: red; lineOpacity: 0.7"
+                      hand-click-trigger>
+            </a-entity>
 
             <a-entity id="right-hand" 
                       hand-tracking-controls="hand: right"
-                      raycaster="objects: .clickable; showLine: true; far: 5"
-                      hand-clicker> </a-entity>
+                      raycaster="objects: .clickable; showLine: true; far: 5; lineColor: red; lineOpacity: 0.7"
+                      hand-click-trigger>
+            </a-entity>
 
             <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: red;"></a-entity>
             <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10; lineColor: red;"></a-entity>
@@ -115,12 +119,24 @@
         const container = document.getElementById('hotspots');
         const infoPanel = document.getElementById('vr-info-panel');
         const infoText = document.getElementById('vr-info-text');
+        const closeBtn = document.getElementById('btn-close');
 
-        // البدء
+        // 1. تحميل البداية
         const initialSrc = document.getElementById('current-img').getAttribute('src');
         loadExternalData(initialSrc);
 
+        // 2. برمجة زر الإغلاق (الحل الجذري لمشكلة عدم الإغلاق)
+        closeBtn.addEventListener('click', function() {
+            // نخفي اللوحة بتصغير حجمها (Animation) أو إخفائها مباشرة
+            infoPanel.setAttribute('visible', false);
+            infoPanel.setAttribute('scale', '0 0 0'); // لضمان اختفائها تماماً
+        });
+
+        // 3. دالة تغيير المشهد
         function changeScene(imagePath) {
+            // نتأكد من إغلاق أي لوحة مفتوحة أولاً
+            infoPanel.setAttribute('visible', false);
+
             const fadeEl = document.createElement('a-sphere');
             fadeEl.setAttribute('radius', 0.1);
             fadeEl.setAttribute('material', 'color: black; side: double; transparent: true; opacity: 0');
@@ -135,9 +151,6 @@
                     
                     sky.setAttribute('src', imagePath);
                     container.innerHTML = ''; 
-                    
-                    // إخفاء اللوحة إذا كانت مفتوحة
-                    infoPanel.setAttribute('visible', false);
 
                     loadExternalData(imagePath);
 
@@ -154,6 +167,7 @@
             }, 50);
         }
 
+        // 4. تحميل البيانات JSON
         function loadExternalData(imagePath) {
             const filename = imagePath.split('/').pop().split('.')[0];
             const jsonPath = `./hotspots/${filename}.json`;
@@ -161,48 +175,52 @@
             fetch(jsonPath)
                 .then(res => { if (!res.ok) throw new Error("No JSON"); return res.json(); })
                 .then(data => data.forEach(spot => createHotspot(spot)))
-                .catch(err => console.log("No hotspots found"));
+                .catch(err => console.log("No hotspots found for this scene"));
         }
 
+        // 5. إنشاء النقاط
         function createHotspot(data) {
             const el = document.createElement('a-entity');
             el.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
-            el.setAttribute('look-at', '[camera]'); // جعل الأيقونة تواجه الكاميرا
+            el.setAttribute('look-at', '[camera]');
             
             let shape;
             if (data.type === 'link') {
-                // سهم الانتقال
+                // شكل الانتقال
                 shape = document.createElement('a-entity');
-                // كرة خضراء
+                
                 const sphere = document.createElement('a-sphere');
                 sphere.setAttribute('radius', '0.3');
                 sphere.setAttribute('color', '#2ecc71');
                 sphere.setAttribute('opacity', '0.9');
                 shape.appendChild(sphere);
                 
-                // حلقة بيضاء
                 const ring = document.createElement('a-ring');
                 ring.setAttribute('radius-inner', '0.35');
                 ring.setAttribute('radius-outer', '0.4');
                 ring.setAttribute('color', 'white');
                 shape.appendChild(ring);
+
             } else {
-                // أيقونة المعلومات
+                // شكل المعلومات
                 shape = document.createElement('a-box');
                 shape.setAttribute('color', '#3498db');
                 shape.setAttribute('scale', '0.4 0.4 0.4');
                 shape.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
             }
 
-            shape.setAttribute('class', 'clickable'); // مهم للتفاعل
+            // *** هام جداً: إضافة كلاس clickable ***
+            shape.setAttribute('class', 'clickable'); 
             
-            // إضافة نبض عند المرور عليه (Hover)
+            // إضافة نبض
             shape.setAttribute('animation__scale', 'property: scale; dir: alternate; dur: 1000; loop: true; to: 1.1 1.1 1.1');
 
             el.appendChild(shape);
 
-            // منطق النقر
+            // 6. ربط حدث النقر (يعمل مع الماوس، اللمس، والقرص باليد)
             shape.addEventListener('click', () => {
+                console.log("Clicked:", data.type); // للتأكد في الكونسول
+                
                 if (data.type === 'link') {
                     changeScene(data.target);
                 } else if (data.type === 'info') {
@@ -213,22 +231,17 @@
             container.appendChild(el);
         }
 
-        // دالة إظهار اللوحة ثلاثية الأبعاد
+        // 7. دالة إظهار اللوحة
         function showInfoPanel(text, position) {
-            // تحديث النص
-            // ملاحظة: لدعم العربية بشكل صحيح 100% في 3D Text تحتاج لخط MSDF
-            // حالياً سيظهر النص الإنجليزي ممتاز، والعربي قد يظهر مفككاً
             infoText.setAttribute('value', text);
             
-            // نقل اللوحة بجوار النقطة
-            // نضعها أعلى النقطة قليلاً وباتجاه الكاميرا
-            infoPanel.setAttribute('position', `${position.x} ${position.y + 0.8} ${position.z}`);
-            
-            // جعل اللوحة تواجه الكاميرا لسهولة القراءة
+            // وضع اللوحة أمام النقطة
+            infoPanel.setAttribute('position', `${position.x} ${position.y + 0.6} ${position.z}`);
             infoPanel.setAttribute('look-at', '[camera]');
             
-            // إظهار اللوحة
+            // الإظهار
             infoPanel.setAttribute('visible', true);
+            infoPanel.setAttribute('scale', '1 1 1');
         }
     </script>
 </body>
