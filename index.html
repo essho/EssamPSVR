@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>جولة عصام الكهربائي (VR Master)</title>
+    <title>جولة عصام الكهربائي (Gaze & Hand)</title>
     
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
     <script>
-        // 1. توجيه العناصر للكاميرا
         AFRAME.registerComponent('look-at', {
             schema: { type: 'selector' },
             tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
         });
 
-        // 2. الزوم
         AFRAME.registerComponent('zoom-controls', {
             schema: { min: {default: 30}, max: {default: 80} },
             init: function () {
@@ -38,11 +36,11 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
         #start-btn {
-            padding: 15px 50px; font-size: 1.5rem; border: 2px solid #2ecc71;
-            background: transparent; color: #2ecc71; border-radius: 50px;
+            padding: 15px 50px; font-size: 1.5rem; border: 2px solid #f1c40f;
+            background: transparent; color: #f1c40f; border-radius: 50px;
             cursor: pointer; margin-top: 30px; font-weight: bold;
         }
-        #start-btn:hover { background: #2ecc71; color: black; }
+        #start-btn:hover { background: #f1c40f; color: black; }
     </style>
 </head>
 <body>
@@ -73,7 +71,19 @@
         <a-entity id="rig" position="0 1.6 0">
             
             <a-camera id="camera" look-controls="magicWindowTrackingEnabled: true; touchEnabled: true" zoom-controls>
-                <a-entity cursor="fuse: false" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015" material="color: white; shader: flat; opacity: 0.5"></a-entity>
+                
+                <a-cursor id="gaze-cursor"
+                          fuse="true" 
+                          fuse-timeout="1500"
+                          raycaster="objects: .clickable"
+                          position="0 0 -1"
+                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                          material="color: white; shader: flat"
+                          animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 150; from: 0.1 0.1 0.1; to: 1 1 1"
+                          animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1500; from: 1 1 1; to: 0.1 0.1 0.1"
+                          animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 500; to: 1 1 1">
+                </a-cursor>
+
             </a-camera>
 
             <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10; lineColor: #2ecc71"></a-entity>
@@ -98,6 +108,7 @@
         const infoText = document.getElementById('info-text');
         const audioEntity = document.getElementById('scene-audio');
         const welcomeScreen = document.getElementById('welcome-screen');
+        const gazeCursor = document.getElementById('gaze-cursor'); // المؤشر
         let hideTimer;
 
         function startExperience() {
@@ -115,7 +126,27 @@
             fetch(jsonPath)
                 .then(res => { if (!res.ok) throw new Error("No JSON"); return res.json(); })
                 .then(data => {
-                    // الصوت
+                    
+                    // 1. إعدادات المؤشر (Gaze Settings) من JSON
+                    if (data.settings) {
+                        // تفعيل أو إلغاء الـ fuse
+                        gazeCursor.setAttribute('fuse', data.settings.enableFuse);
+                        
+                        if (data.settings.enableFuse) {
+                            // ضبط الزمن
+                            const duration = data.settings.fuseDuration || 1500;
+                            gazeCursor.setAttribute('fuse-timeout', duration);
+                            
+                            // تحديث الأنيميشن ليتوافق مع الزمن الجديد
+                            gazeCursor.setAttribute('animation__fusing', `property: scale; startEvents: fusing; easing: linear; dur: ${duration}; from: 1 1 1; to: 0.1 0.1 0.1`);
+                        }
+                    } else {
+                        // افتراضي إذا لم يوجد إعدادات
+                        gazeCursor.setAttribute('fuse', true);
+                        gazeCursor.setAttribute('fuse-timeout', 1500);
+                    }
+
+                    // 2. الصوت
                     if (data.audio && data.audio.src) {
                         audioEntity.setAttribute('sound', {
                             src: data.audio.src,
@@ -126,7 +157,7 @@
                         setTimeout(() => audioEntity.components.sound.playSound(), 100);
                     }
 
-                    // النقاط
+                    // 3. النقاط
                     container.innerHTML = ''; 
                     if (data.hotspots) {
                         data.hotspots.forEach(spot => createSmartHotspot(spot));
@@ -145,24 +176,24 @@
 
             let visualElement;
 
-            // 1. المجسمات
+            // المجسمات
             if (data.geometry) {
                 visualElement = document.createElement('a-entity');
                 visualElement.setAttribute('geometry', `primitive: ${data.geometry}`);
                 visualElement.setAttribute('material', `color: ${data.color || 'white'}; opacity: 0.9`);
             }
-            // 2. الصور
+            // الصور
             else if (data.image) {
                 visualElement = document.createElement('a-image');
                 visualElement.setAttribute('src', data.image);
             }
-            // 3. الرموز (المحرك الذكي)
+            // الرموز
             else if (data.char) {
                 visualElement = document.createElement('a-image');
                 const iconUrl = generateTextTexture(data.char, data.color || 'white');
                 visualElement.setAttribute('src', iconUrl);
             } 
-            // 4. الافتراضي
+            // الافتراضي
             else {
                 visualElement = document.createElement('a-sphere');
                 visualElement.setAttribute('radius', '0.2');
@@ -171,24 +202,33 @@
 
             const scale = data.scale || "1 1 1";
             visualElement.setAttribute('scale', scale);
-            visualElement.setAttribute('class', 'clickable');
+            visualElement.setAttribute('class', 'clickable'); // هام جداً للمؤشر
+            
+            // أنيميشن النبض
             visualElement.setAttribute('animation', 'property: scale; dir: alternate; dur: 1500; loop: true; to: ' + parseScale(scale, 1.2));
 
             el.appendChild(visualElement);
 
+            // حدث النقر (يعمل سواء باليد، الماوس، أو اكتمال النظر)
             visualElement.addEventListener('click', (evt) => {
+                // إيقاف التكرار إذا تم النقر بوسيلتين في نفس الوقت
                 if(evt) evt.stopPropagation();
+                
                 if (data.type === 'link') {
                     changeScene(data.target);
                 } else if (data.type === 'info') {
                     showInfoPanel(data.text, el.getAttribute('position'));
                 }
             });
+            
+            // أحداث للتفاعل البصري مع المؤشر
+            visualElement.addEventListener('mouseenter', () => {
+                // يمكن إضافة صوت خفيف عند المرور
+            });
 
             container.appendChild(el);
         }
 
-        // دالة تحويل الرموز لصور
         function generateTextTexture(text, color) {
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 256;
