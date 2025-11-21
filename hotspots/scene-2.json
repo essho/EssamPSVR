@@ -17,7 +17,7 @@
       "color": "#3498db",
       "scale": "1.5 1.5 1.5",
       "image": "./icons/info.png",
-      "text": ""
+      "text": "عصام"
     },
     {
       "type": "link",
@@ -27,7 +27,7 @@
       "color": "#cc2e82",
       "scale": "1.5 1.5 1.5",
       "geometry": "triangle",
-      "target": ""
+      "target": "./panoramas/scene-1.jpg"
     },
     {
       "type": "info",
@@ -37,7 +37,7 @@
       "color": "#3498db",
       "scale": "1.5 1.5 1.5",
       "char": "الغاز",
-      "text": ""
+      "text": "الغاز",
     }
   ]
 }
