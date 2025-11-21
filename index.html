@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جولة افتراضية - النسخة النهائية</title>
+    
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <script>
+        // مكون يجعل الأيقونات تواجه الكاميرا دائماً
+        AFRAME.registerComponent('look-at', {
+            schema: { type: 'selector' },
+            tick: function () { if(this.data) this.el.object3D.lookAt(this.data.object3D.position); }
+        });
+    </script>
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* واجهة الأزرار السفلية */
+        #ui {
+            position: absolute; bottom: 30px; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 10px;
+            z-index: 100; pointer-events: none; /* يسمح بالضغط من خلاله */
+        }
+        
+        button {
+            pointer-events: auto; /* تفعيل الضغط على الأزرار */
+            padding: 12px 25px; font-size: 16px; font-weight: bold;
+            background: rgba(0,0,0,0.6); color: white; border: 2px solid white;
+            border-radius: 30px; cursor: pointer; transition: 0.3s;
+        }
+        
+        button:hover { background: white; color: black; }
+        
+        /* تنسيق الزر النشط */
+        button.active { background: #2ecc71; border-color: #2ecc71; color: white; }
+        
+        /* إخفاء زر اختيار الملفات */
+        #file-input { display: none; }
+
+        /* تعليمات في الأعلى */
+        #info {
+            position: absolute; top: 10px; width: 100%; text-align: center;
+            color: white; text-shadow: 1px 1px 2px black; pointer-events: none;
+            font-size: 14px; z-index: 99;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">اضغط على "وضع الإضافة" لتعديل الاماكن، او "وضع العرض" للتجول</div>
+
+    <div id="ui">
+        <button id="btn-mode">وضع العرض</button>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*">
+
+    <a-scene cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        
+        <a-assets>
+            <img id="pano" src="./panoramas/scene-1.jpg">
+        </a-assets>
+
+        <a-sky id="sky" src="#pano" rotation="0 -90 0" class="clickable"></a-sky>
+
+        <a-camera>
+            <a-cursor color="white" scale="0.5 0.5 0.5" opacity="0.7"></a-cursor>
+        </a-camera>
+
+        <a-entity id="hotspots"></a-entity>
+
+    </a-scene>
+
+    <script>
+        // === المتغيرات ===
+        let isEditMode = false;
+        let currentHotspot = null; // العنصر الذي يتم تعديله حالياً
+        const btn = document.getElementById('btn-mode');
+        const sky = document.getElementById('sky');
+        const fileInput = document.getElementById('file-input');
+        const hotspotsContainer = document.getElementById('hotspots');
+
+        // === 1. تبديل الوضع (عرض / تعديل) ===
+        btn.addEventListener('click', function() {
+            isEditMode = !isEditMode;
+            if (isEditMode) {
+                btn.innerText = "وضع الإضافة (نشط)";
+                btn.classList.add('active');
+                document.getElementById('info').innerText = "اضغط في أي مكان لإضافة سهم، أو اضغط على سهم موجود لتعديله/حذفه";
+            } else {
+                btn.innerText = "وضع العرض";
+                btn.classList.remove('active');
+                document.getElementById('info').innerText = "اضغط على الأسهم للانتقال";
+            }
+        });
+
+        // === 2. النقر على السماء (لإضافة نقطة جديدة) ===
+        sky.addEventListener('click', function(evt) {
+            if (!isEditMode) return; // لا تفعل شيئاً في وضع العرض
+
+            // التأكد من مكان الضغط
+            if (evt.detail.intersection) {
+                const point = evt.detail.intersection.point;
+                
+                // سؤال المستخدم
+                if(confirm("هل تريد إضافة سهم انتقال هنا؟")) {
+                    createHotspot(point);
+                }
+            }
+        });
+
+        // === 3. إنشاء النقطة (السهم) ===
+        function createHotspot(position) {
+            // إنشاء كرة خضراء
+            const el = document.createElement('a-sphere');
+            el.setAttribute('color', '#2ecc71');
+            el.setAttribute('radius', '0.25');
+            el.setAttribute('opacity', '0.8');
+            el.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
+            el.setAttribute('class', 'clickable'); // مهم لتعمل النقرة
+            el.setAttribute('look-at', '[camera]'); // تواجه المستخدم
+            
+            // إضافة حلقة جمالية حول الكرة
+            const ring = document.createElement('a-ring');
+            ring.setAttribute('color', 'white');
+            ring.setAttribute('radius-inner', '0.3');
+            ring.setAttribute('radius-outer', '0.35');
+            el.appendChild(ring);
+
+            // === أهم جزء: ماذا يحدث عند النقر على الكرة؟ ===
+            el.addEventListener('click', function(e) {
+                // منع انتشار الحدث للسماء (حتى لا يظن البرنامج أننا نضغط الخلفية)
+                e.stopPropagation();
+
+                if (isEditMode) {
+                    // --- وضع التعديل ---
+                    const action = prompt("خيارات السهم:\n1. اكتب 'img' لتغيير الصورة\n2. اكتب 'del' لحذف السهم");
+                    
+                    if (action === 'img') {
+                        currentHotspot = el;
+                        fileInput.click();
+                    } else if (action === 'del') {
+                        el.parentNode.removeChild(el);
+                    }
+
+                } else {
+                    // --- وضع العرض ---
+                    const targetUrl = el.dataset.target;
+                    if (targetUrl) {
+                        // انتقال للصورة
+                        changeScene(targetUrl);
+                    } else {
+                        alert("لم يتم ربط صورة بهذا السهم بعد! قم بالتبديل لوضع الإضافة لربط صورة.");
+                    }
+                }
+            });
+
+            // إضافة العنصر للمشهد
+            hotspotsContainer.appendChild(el);
+            
+            // فتح اختيار الصورة فوراً عند الإنشاء
+            currentHotspot = el;
+            fileInput.click();
+        }
+
+        // === 4. تغيير المشهد (تأثير بسيط) ===
+        function changeScene(url) {
+            // جعل الشاشة سوداء لحظياً
+            sky.setAttribute('color', '#000');
+            
+            setTimeout(() => {
+                sky.setAttribute('src', url);
+                sky.removeAttribute('color'); // إعادة الألوان
+            }, 300);
+        }
+
+        // === 5. عند اختيار ملف من الجهاز ===
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && currentHotspot) {
+                const url = URL.createObjectURL(file);
+                // تخزين الرابط داخل بيانات الكرة نفسها
+                currentHotspot.dataset.target = url;
+                alert("تم ربط الصورة بنجاح!");
+            }
+        });
+
+    </script>
+</body>
+</html>
