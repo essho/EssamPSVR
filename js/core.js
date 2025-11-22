@@ -23,7 +23,7 @@ const Core = {
 // دالة محسنة: تحافظ على زاوية النظر من ارتفاع العين (1.6m)
     normalizePosition: function(point, radius = 10) {
         // 1. تحديد موقع الكاميرا (العين)
-        const eyeY = 1.6; 
+        const eyeY = 1.8; 
         
         // 2. حساب المتجه من العين إلى النقطة البعيدة
         const dx = point.x - 0;
